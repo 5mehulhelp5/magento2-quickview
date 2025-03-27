@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView module
+ *
+ * @author    Amadeco Team <info@amadeco.fr>
+ * @copyright Copyright (c) 2025 Amadeco (https://www.amadeco.fr)
+ * @license   https://opensource.org/licenses/MIT MIT License
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Customer:etc/sections.xsd">
+    <action name="quickview/cart/add">
+        <section name="cart"/>
+    </action>
+</config>

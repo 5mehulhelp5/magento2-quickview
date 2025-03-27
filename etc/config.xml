@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <quickview>
+            <general>
+                <enable>1</enable>
+                <elements_selector><![CDATA[.product-item]]></elements_selector>
+                <btn_container><![CDATA[.product-item-info]]></btn_container>
+                <btn_label>Quick View</btn_label>
+            </general>
+            <modal>
+                <modal_title>Quick View</modal_title>
+                <show_product_detail_tab>1</show_product_detail_tab>
+                <show_product_review_tab>1</show_product_review_tab>
+                <show_product_downloadable_sample>1</show_product_downloadable_sample>
+                <show_button_go_detail>1</show_button_go_detail>
+            </modal>
+            <selectors>
+                <review_tab>#tab-label-reviews-title[data-role=trigger]</review_tab>
+                <tab_title_class>.quickview-tab-title</tab_title_class>
+                <tab_content_class>.quickview-tab-content</tab_content_class>
+            </selectors>
+            <replacements>
+                <wrapper_identifier>quickview-wrapper</wrapper_identifier>
+                <gallery_placeholder><![CDATA[data-gallery-role="gallery-placeholder"=>data-gallery-role="quickview-gallery-placeholder"]]></gallery_placeholder>
+                <gallery_placeholder_alt><![CDATA[data-gallery-role=gallery-placeholder=>data-gallery-role=quickview-gallery-placeholder]]></gallery_placeholder_alt>
+                <swatch_options><![CDATA[data-role="swatch-options"=>data-role="quickview-swatch-options"]]></swatch_options>
+                <swatch_options_alt><![CDATA[data-role=swatch-options=>data-role=quickview-swatch-options]]></swatch_options_alt>
+                <addtocart_form><![CDATA[product_addtocart_form=>quickview_product_addtocart_form]]></addtocart_form>
+                <addtocart_button><![CDATA[product-addtocart-button=>quickview-product-addtocart-button]]></addtocart_button>
+                <swatch_product_selector><![CDATA[#quickview-modal .product-info-main]]></swatch_product_selector>
+            </replacements>
+        </quickview>
+    </default>
+</config>

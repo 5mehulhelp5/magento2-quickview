@@ -1,0 +1,20 @@
+<?php
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+
+/** @var \Amadeco\QuickView\Block\Init $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<div id="quickview-modal"></div>
+<script type="text/x-magento-init">
+{
+    "<?= $escaper->escapeJs($block->getElementsSelector()) ?>": {
+        "amadecoQuickView": <?= /* @noEscape */ $block->getSerializedConfig() ?>
+    }
+}
+</script>

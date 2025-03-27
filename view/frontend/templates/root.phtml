@@ -1,0 +1,14 @@
+<?php
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+
+/** @var \Magento\Framework\Escaper $escaper */
+/** @var string $layoutContent */
+?>
+<link rel="stylesheet" type="text/css" href="<?= $escaper->escapeUrl($block->getViewFileUrl('mage/gallery/gallery.css')) ?>">
+<?= /* @noEscape */ $layoutContent ?>

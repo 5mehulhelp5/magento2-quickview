@@ -1,0 +1,76 @@
+<?php
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+
+/** @var \Magento\Downloadable\Block\Catalog\Product\Links $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<?php $_linksPurchasedSeparately = $block->getLinksPurchasedSeparately(); ?>
+<?php if ($block->getProduct()->isSaleable() && $block->hasLinks()): ?>
+    <?php $_links = $block->getLinks(); ?>
+    <?php $_linksLength = 0; ?>
+    <?php $_isRequired = $block->getLinkSelectionRequired(); ?>
+    <div class="field downloads<?php if ($_isRequired): ?> required<?php endif; ?><?php if (!$_linksPurchasedSeparately): ?> downloads-no-separately<?php endif; ?>">
+        <label class="label">
+            <span><?= $escaper->escapeHtml($block->getLinksTitle()) ?></span>
+        </label>
+        <div class="control"
+            id="downloadable-links-list"
+            data-mage-init='{"downloadable":{
+                "linkElement": "input:checkbox[value]",
+                "allElements": "#links_all",
+                "config": <?= /* @escapeNotVerified */ $block->getJsonConfig() ?>
+            }}'
+            data-container-for="downloadable-links">
+            <?php foreach ($_links as $_link): ?>
+                <?php $_linksLength++; ?>
+                <div class="field choice" data-role="link">
+                    <?php if ($_linksPurchasedSeparately): ?>
+                    <input type="checkbox"
+                        <?php if ($_isRequired): ?>data-validate="{'validate-one-checkbox-required-by-name':'downloadable-links-list'}" <?php endif; ?>
+                        name="links[]"
+                        id="links_<?= $escaper->escapeHtmlAttr($_link->getId()) ?>"
+                        value="<?= $escaper->escapeHtmlAttr($_link->getId()) ?>" <?= /* @escapeNotVerified */ $block->getLinkCheckedValue($_link); ?> />
+                    <?php endif; ?>
+
+                    <label class="label" for="links_<?= $escaper->escapeHtmlAttr($_link->getId()) ?>">
+                        <span><?= $escaper->escapeHtml($_link->getTitle()) ?></span>
+
+                        <?php if ($_link->getSampleFile() || $_link->getSampleUrl()): ?>
+                            <a class="sample link"
+                               href="<?= $escaper->escapeUrl($block->getLinkSampleUrl($_link)) ?>"
+                               <?= $block->getIsOpenInNewWindow() ? 'target="_blank"' : ''; ?>>
+                                <?= $escaper->escapeHtml(__('sample')) ?>
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if ($_linksPurchasedSeparately): ?>
+                            <?= /* @escapeNotVerified */ $block->getLinkPrice($_link); ?>
+                        <?php endif; ?>
+                    </label>
+                </div>
+            <?php endforeach; ?>
+
+            <?php if ($_linksPurchasedSeparately && $_linksLength > 1): ?>
+                <div class="field choice downloads-all">
+                    <input type="checkbox"
+                           data-notchecked="<?= $escaper->escapeHtmlAttr(__('Select all')) ?>"
+                           data-checked="<?= $escaper->escapeHtmlAttr(__('Unselect all')) ?>"
+                           id="links_all" />
+                    <label class="label" for="links_all">
+                        <span><?= $escaper->escapeHtmlAttr(__('Select all')) ?></span>
+                    </label>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($_isRequired): ?>
+        <span id="links-advice-container"></span>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>

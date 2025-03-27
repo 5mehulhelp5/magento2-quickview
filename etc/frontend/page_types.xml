@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView module
+ *
+ * @author    Amadeco Team <info@amadeco.fr>
+ * @copyright Copyright (c) 2025 Amadeco (https://www.amadeco.fr)
+ * @license   https://opensource.org/licenses/MIT MIT License
+ */
+-->
+<page_types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_types.xsd">
+    <type id="quickview_index_view" label="Catalog Product Quickview (any)"/>
+</page_types>

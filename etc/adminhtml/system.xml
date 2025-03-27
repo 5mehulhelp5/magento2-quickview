@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="quickview" translate="label" type="text" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="1">
+            <class>separator-top</class>
+            <label>Quick View</label>
+            <tab>catalog</tab>
+            <resource>Amadeco_QuickView::config</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General Settings</label>
+                <field id="enable" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Quick View</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="elements_selector" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Specify Product Items (class) to show Quick View button</label>
+                    <comment>Default is .product-item. You can specify multiple CSS classes here, separated by comma (,).</comment>
+                </field>
+                <field id="btn_container" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Append QuickView Buttons To</label>
+                    <comment><![CDATA[Specify custom CSS class for the container. Default is .product-item-info]]></comment>
+                </field>
+                <field id="btn_label" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Quick View Button Label</label>
+                    <comment><![CDATA[Label for Quick View Buttons. Default is <em>Quick View</em>]]></comment>
+                </field>
+            </group>
+            <group id="modal" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Modal Settings</label>
+                <field id="modal_title" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Modal Title</label>
+                </field>
+                <field id="show_product_detail_tab" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show Product's Details Information</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="show_product_review_tab" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show Product's Review Information</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="show_product_downloadable_sample" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show Product Downloadable Samples</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="show_button_go_detail" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show Button Go To Product</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+            <group id="selectors" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Theme Selectors</label>
+                <field id="review_tab" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Review Tab Selector</label>
+                    <comment><![CDATA[Default is <em>#tab-label-reviews-title[data-role=trigger]</em>]]></comment>
+                </field>
+                <field id="tab_title_class" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Tab Title Class</label>
+                    <comment><![CDATA[Default is <em>.quickview-tab-title</em>]]></comment>
+                </field>
+                <field id="tab_content_class" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Tab Content Class</label>
+                    <comment><![CDATA[Default is <em>.quickview-tab-content</em>]]></comment>
+                </field>
+            </group>
+            <group id="replacements" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>HTML Identifiers Replacement</label>
+                <field id="wrapper_identifier" translate="label comment" type="text" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Wrapper Identifier</label>
+                    <comment><![CDATA[HTML class or ID used to identify the QuickView content. Default is <em>quickview-wrapper</em>]]></comment>
+                </field>
+                <field id="gallery_placeholder" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Gallery Placeholder</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="gallery_placeholder_alt" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Gallery Placeholder (Alternative)</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="swatch_options" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Swatch Options</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="swatch_options_alt" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Swatch Options (Alternative)</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="addtocart_form" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Add to Cart Form</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="addtocart_button" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Add to Cart Button</label>
+                    <comment><![CDATA[Format: search=>replace]]></comment>
+                </field>
+                <field id="swatch_product_selector" translate="label comment" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Swatch Product Selector</label>
+                    <comment><![CDATA[CSS selector for product container in QuickView]]></comment>
+                </field>
+                <field id="custom_replacements" translate="label comment" type="textarea" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Custom Replacements</label>
+                    <comment><![CDATA[Add one per line in format: search=>replace]]></comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

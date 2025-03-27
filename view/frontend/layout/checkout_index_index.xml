@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <remove src="mage/gallery/gallery.css" />
+    </head>
+    <body>
+        <referenceBlock name="amadeco.quickview.init" remove="true" />
+    </body>
+</page>

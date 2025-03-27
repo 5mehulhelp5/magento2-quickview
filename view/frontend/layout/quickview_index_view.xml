@@ -1,0 +1,180 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <container name="root" label="Quickview Product container">
+            <block class="Amadeco\QuickView\Block\QuickView" name="quickview.container">
+                <!-- Product media -->
+                <container name="quickview.product.info.media" htmlTag="div" htmlClass="quickview-media product media col-12 col-lg-5 col-xxl-4 order-0">
+                    <block class="Magento\Catalog\Block\Product\View\Gallery" name="product.info.media.image" template="Magento_Catalog::product/view/gallery.phtml">
+                        <arguments>
+                            <argument name="gallery_options" xsi:type="object">Magento\Catalog\Block\Product\View\GalleryOptions</argument>
+                            <argument name="imageHelper" xsi:type="object">Magento\Catalog\Helper\Image</argument>
+                        </arguments>
+                    </block>
+                </container>
+
+                <!-- Main content -->
+                <container name="quickview.product.info.main" htmlTag="div" htmlClass="quickview-main product-info-main col-12 col-lg-7 col-xxl-8 order-1">
+                    <!-- Page title -->
+                    <block class="Magento\Theme\Block\Html\Title" name="quickview.title" template="Magento_Theme::html/title.phtml">
+                        <arguments>
+                            <argument name="css_class" xsi:type="string">product quickview-title</argument>
+                        </arguments>
+                        <block class="Magento\Catalog\Block\Product\View\Description" name="product.info.sku" template="Magento_Catalog::product/view/attribute.phtml">
+                            <arguments>
+                                <argument name="at_call" xsi:type="string">getId</argument>
+                                <argument name="at_code" xsi:type="string">sku</argument>
+                                <argument name="css_class" xsi:type="string">sku text-secondary</argument>
+                                <argument name="at_label" xsi:type="string">default</argument>
+                            </arguments>
+                        </block>
+                    </block>
+
+                    <!-- Reviews and rating -->
+                    <block class="Magento\Catalog\Block\Product\View" name="quickview.product.info.review" template="Magento_Catalog::product/view/review.phtml" />
+
+                    <block class="Magento\Catalog\Block\Product\View\Details" name="quickview.tabs" template="Amadeco_QuickView::tabs.phtml">
+                        <!-- Main information -->
+                        <block name="quickview.product.info" template="Magento_Theme::html/container.phtml" group="quickview.tabs">
+                            <arguments>
+                                <argument name="title" xsi:type="string" translate="true">Details</argument>
+                                <argument name="html_id" xsi:type="string">quickview-info-main</argument>
+                                <argument name="html_class" xsi:type="string">product-info-main</argument>
+                                <argument name="sort_order" xsi:type="string">10</argument>
+                            </arguments>
+
+                            <!-- Price and alerts -->
+                            <container name="product.info.price" label="Quickview Product Price" htmlTag="div" htmlClass="product-info-price">
+                                <!-- Price -->
+                                <block class="Magento\Catalog\Pricing\Render" name="product.price.final">
+                                    <arguments>
+                                        <argument name="price_render" xsi:type="string">product.price.render.default</argument>
+                                        <argument name="price_type_code" xsi:type="string">final_price</argument>
+                                        <argument name="zone" xsi:type="string">item_view</argument>
+                                    </arguments>
+                                </block>
+                                <!-- Tier price -->
+                                <block class="Magento\Catalog\Pricing\Render" name="product.price.tier">
+                                    <arguments>
+                                        <argument name="price_render" xsi:type="string">product.price.render.default</argument>
+                                        <argument name="price_type_code" xsi:type="string">tier_price</argument>
+                                        <argument name="zone" xsi:type="string">item_view</argument>
+                                    </arguments>
+                                </block>
+                            </container>
+
+                            <!-- Financing -->
+                            <container name="product.info.financing" label="Quickview Product Info Financing" htmlTag="div" htmlClass="product-info-financing" />
+
+                            <!-- Stock information and availability -->
+                            <container name="product.info.stock.sku" label="Quickview Product Auxiliary Info container" htmlTag="div" htmlClass="product-info-stock-sku">
+                                <!-- Product type / Availability display -->
+                                <container name="product.info.type" before="-" label="Quickview Product Info Type" />
+                                <!-- Magento_CatalogInventory -->
+                                <block class="Magento\CatalogInventory\Block\Qtyincrements" name="product.info.extrahint.qtyincrements" template="Magento_CatalogInventory::qtyincrements.phtml"/>
+                            </container>
+
+                            <container name="alert.urls" as="alert_urls" label="Alert Urls" after="product.info.stock.sku" />
+
+                            <block class="Magento\Catalog\Block\Product\View" name="product.info" template="Magento_Catalog::product/view/form.phtml" after="alert.urls">
+                                <container name="product.info.form.content" as="product_info_form_content">
+                                    <block class="Magento\Catalog\Block\Product\View" name="product.info.addtocart" as="addtocart" template="Magento_Catalog::product/view/addtocart.phtml" />
+                                </container>
+                                <block name="product.info.form.options" as="options_container">
+                                    <block class="Magento\Catalog\Block\Product\View\Options\Wrapper" name="product.info.options.wrapper" as="product_options_wrapper" template="Magento_Catalog::product/view/options/wrapper.phtml">
+                                        <block class="Magento\Catalog\Block\Product\View\Options" name="product.info.options" as="product_options" template="Magento_Catalog::product/view/options.phtml">
+                                            <block class="Magento\Catalog\Block\Product\View\Options\Type\DefaultType" as="default" template="Magento_Catalog::product/view/options/type/default.phtml" />
+                                            <block class="Magento\Catalog\Block\Product\View\Options\Type\Text" as="text" template="Magento_Catalog::product/view/options/type/text.phtml" />
+                                            <block class="Magento\Catalog\Block\Product\View\Options\Type\File" as="file" template="Magento_Catalog::product/view/options/type/file.phtml" />
+                                            <block class="Magento\Catalog\Block\Product\View\Options\Type\Select" as="select" template="Magento_Catalog::product/view/options/type/select.phtml" />
+                                            <block class="Magento\Catalog\Block\Product\View\Options\Type\Date" as="date" template="Magento_Catalog::product/view/options/type/date.phtml" />
+                                        </block>
+                                    </block>
+                                    <block class="Magento\Catalog\Block\Product\View\Options\Wrapper\Bottom" name="product.info.options.wrapper.bottom" as="product_options_wrapper_bottom" template="Magento_Catalog::product/view/options/wrapper/bottom.phtml">
+                                        <block class="Magento\Catalog\Block\Product\View" name="product.info.addtocart.additional" as="product.info.addtocart" template="Magento_Catalog::product/view/addtocart.phtml" />
+                                    </block>
+                                </block>
+                            </block>
+
+                            <container name="product.info.extrahint" as="extrahint" label="Quickview Product View Extra Hint">
+                                <container name="product.info.social" label="Product social links container" htmlTag="div" htmlClass="product-social-links">
+                                    <block class="Magento\Catalog\Block\Product\View" name="product.info.addto" as="addto" template="Magento_Catalog::product/view/addto.phtml">
+                                        <block class="Magento\Wishlist\Block\Catalog\Product\View\AddTo\Wishlist" name="view.addto.wishlist" template="Magento_Wishlist::catalog/product/view/addto/wishlist.phtml" />
+                                        <block class="Magento\Catalog\Block\Product\View\AddTo\Compare" name="view.addto.compare" after="view.addto.wishlist"
+                                            template="Magento_Catalog::product/view/addto/compare.phtml">
+                                            <arguments>
+                                                <argument name="addToCompareViewModel" xsi:type="object">Magento\Catalog\ViewModel\Product\Checker\AddToCompareAvailability</argument>
+                                            </arguments>
+                                        </block>
+                                    </block>
+                                </container>
+                            </container>
+                        </block>
+                        <!-- Product detailed information (tab) -->
+                        <block ifconfig="quickview/modal/show_product_detail_tab" name="quickview.product.info.detail" template="Magento_Theme::html/container.phtml" group="quickview.tabs">
+                            <arguments>
+                                <argument name="title" xsi:type="string" translate="true">More Info</argument>
+                                <argument name="html_id" xsi:type="string">quickview-info-detail</argument>
+                                <argument name="html_class" xsi:type="string">product-info-detail</argument>
+                                <argument name="sort_order" xsi:type="number">20</argument>
+                            </arguments>
+                            <block class="Magento\Catalog\Block\Product\View\Description" name="product.info.description" template="Magento_Catalog::product/view/attribute.phtml">
+                                <arguments>
+                                    <argument name="at_call" xsi:type="string">getDescription</argument>
+                                    <argument name="at_code" xsi:type="string">description</argument>
+                                    <argument name="css_class" xsi:type="string">description</argument>
+                                    <argument name="at_label" xsi:type="string">none</argument>
+                                    <argument name="title" translate="true" xsi:type="string">Description</argument>
+                                </arguments>
+                            </block>
+                            <block class="Magento\Catalog\Block\Product\View\Attributes" name="product.attributes" template="Magento_Catalog::product/view/attributes.phtml"/>
+                        </block>
+                    </block>
+                </container>
+            </block>
+
+            <!-- Additional information -->
+            <referenceContainer name="quickview.container">
+                <block class="Magento\Catalog\Block\Product\View\Additional" name="product.info.additional" as="product_additional_data" />
+                <block class="Magento\Cookie\Block\RequireCookie" name="require-cookie" template="Magento_Cookie::require_cookie.phtml">
+                    <arguments>
+                        <argument name="triggers" xsi:type="array">
+                            <item name="compareProductLink" xsi:type="string">.action.tocompare</item>
+                            <item name="addToWishlistLink" xsi:type="string">.action.towishlist</item>
+                        </argument>
+                    </arguments>
+                </block>
+            </referenceContainer>
+
+            <referenceBlock name="product.info.addtocart">
+                <block class="Magento\Catalog\Block\ShortcutButtons\InCatalog" name="addtocart.shortcut.buttons"/>
+            </referenceBlock>
+
+            <referenceBlock name="product.info.addtocart.additional">
+                <block class="Magento\Catalog\Block\ShortcutButtons\InCatalog" name="addtocart.shortcut.buttons.additional"/>
+            </referenceBlock>
+
+            <!-- Product video -->
+            <referenceContainer name="quickview.product.info.media">
+                <block class="Magento\ProductVideo\Block\Product\View\Gallery" name="product.info.media.video" after="product.info.media.image" template="Magento_ProductVideo::product/view/gallery.phtml"/>
+            </referenceContainer>
+
+            <block class="Magento\Framework\Pricing\Render" name="product.price.render.default">
+                <arguments>
+                    <argument name="price_render_handle" xsi:type="string">catalog_product_prices</argument>
+                    <argument name="use_link_for_as_low_as" xsi:type="boolean">true</argument>
+                </arguments>
+            </block>
+        </container>
+    </body>
+</page>

@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Amadeco QuickView Module
+ *
+ * @category   Amadeco
+ * @package    Amadeco_QuickView
+ * @author     Ilan Parmentier
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Product download samples -->
+        <referenceBlock name="quickview.product.info.main">
+            <block ifconfig="quickview/modal/show_product_downloadable_sample" class="Magento\Downloadable\Block\Catalog\Product\Samples" name="product.info.downloadable.samples" as="samples" template="Magento_Downloadable::catalog/product/samples.phtml" after="product.info.overview" />
+        </referenceBlock>
+
+        <!-- Product download option links -->
+        <referenceBlock name="quickview.product.info.main">
+            <block name="product.type.downloads" class="Amadeco\QuickView\Block\QuickView" template="Amadeco_QuickView::content.phtml" after="product.info.downloadable.samples">
+                <arguments>
+                    <argument name="title" xsi:type="string" translate="true">Downloads</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+
+        <referenceBlock name="product.info.options.wrapper">
+            <block class="Magento\Downloadable\Block\Catalog\Product\Links" name="product.info.downloadable.options" as="type_downloadable_options" before="-" template="Amadeco_QuickView::product/downloadable/links.phtml">
+                <block class="Magento\Catalog\Pricing\Render" name="product.price.link" after="product.info.downloadable.options">
+                    <arguments>
+                        <argument name="price_render" xsi:type="string">product.price.render.default</argument>
+                        <argument name="price_type_code" xsi:type="string">link_price</argument>
+                    </arguments>
+                </block>
+            </block>
+        </referenceBlock>
+
+        <referenceContainer name="product.info.type">
+            <block class="Magento\Downloadable\Block\Catalog\Product\View\Type" name="product.info.downloadable" as="product_type_data" template="Magento_Downloadable::catalog/product/type.phtml">
+                <block class="Magento\CatalogInventory\Block\Stockqty\DefaultStockqty" name="product.info.downloadable.extra" as="product_type_data_extra" template="Magento_CatalogInventory::stockqty/default.phtml"/>
+            </block>
+        </referenceContainer>
+
+        <move element="product.info" destination="product.type.downloads" />
+    </body>
+</page>

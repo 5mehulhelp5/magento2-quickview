@@ -1,0 +1,87 @@
+//
+//  Common: Product Quick View
+//  _____________________________________________
+
+& when (@media-common = true) {
+    .quickview-button {
+        &:extend(.btn all, .btn-secondary all, .btn-sm);
+    }
+
+    .product-item-info {
+        position: relative;
+
+        .quickview-btn-container {
+            display: none;
+            position: absolute;
+            text-align: center;
+            white-space: nowrap;
+            z-index: 2;
+            left: @indent__s;
+            bottom: @indent__s;
+        }
+
+        &:hover {
+            .quickview-btn-container {
+                display: block;
+            }
+        }
+    }
+
+    .products-list {
+        .quickview-btn-container {
+            top: 40%;
+            left: 6%;
+        }
+    }
+
+    #quickview-tabs {
+        .additional-attributes {
+            .col {
+                width: 50% !important;
+            }
+        }
+    }
+
+    /**
+     * QuickView Support for Hotspot elements
+     */
+    .hotspot,
+    .hot-spot {
+        .quickview-btn-container {
+            position: static;
+            display: block;
+            width: 100%;
+            margin-top: @indent__s;
+            z-index: auto;
+            left: unset;
+            top: unset;
+            transform: none;
+        }
+
+        .quickview-button {
+            width: 100%;
+        }
+    }
+}
+
+//
+//  Desktop
+//  _____________________________________________
+
+.media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {
+    #quickview-modal .product.data.items {
+        .lib-data-tabs(
+            @_tab-control-border-color: @secondary__color,
+            @_tab-content-border-top-status: false
+        );
+        border-bottom: 0;
+        margin-left: 0;
+        margin-right: 0;
+
+        .item.title a {
+            &:after {
+                display: none;
+            }
+        }
+    }
+}

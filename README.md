@@ -1,5 +1,12 @@
 # Amadeco QuickView for Magento 2
 
+[![Latest Stable Version](https://img.shields.io/github/v/release/Amadeco/magento2-quickview)](https://github.com/Amadeco/magento2-quickview/releases)
+[![License](https://img.shields.io/github/license/Amadeco/magento2-quickview)](https://github.com/Amadeco/magento2-quickview/blob/main/LICENSE)
+[![Magento](https://img.shields.io/badge/Magento-2.4.x-brightgreen.svg)](https://magento.com)
+[![PHP](https://img.shields.io/badge/PHP-8.1|8.2|8.3-blue.svg)](https://www.php.net)
+
+[SPONSOR: Amadeco](https://www.amadeco.fr)
+
 A highly configurable QuickView module for Magento 2 that allows customers to quickly preview product details without leaving the current page.
 
 ## Features

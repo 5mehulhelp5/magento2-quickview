@@ -106,7 +106,7 @@ define([
 
             // Find product link and ID
             $productLink = $parent.find(this.options.selectors.productPhotoLink);
-            productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id');
+            productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') || $parent.attr('data-product-id');
 
             // Skip initialization if product ID is missing
             if (typeof(productId) === 'undefined') {
@@ -183,7 +183,7 @@ define([
             var self = this,
                 $parent = $button.closest(this.options.selectors.productItem),
                 $productLink = $parent.find(this.options.selectors.productPhotoLink),
-                productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id'),
+                productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') || $parent.attr('data-product-id'),
                 optionsModal;
 
             // Skip if product ID is missing

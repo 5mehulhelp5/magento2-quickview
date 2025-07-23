@@ -6,21 +6,23 @@
  * @author     Ilan Parmentier
  */
 define([
-    "jquery",
-    "mage/url",
-    "mage/translate",
-    "Magento_Ui/js/modal/modal",
-    "jquery-ui-modules/widget"
+    'jquery',
+    'mage/url',
+    'mage/translate',
+    'Magento_Ui/js/modal/modal',
+    'jquery-ui-modules/widget'
 ], function (
     $,
     urlBuilder,
     $t,
-    modal
+    modal,
+    widget
 ) {
-    "use strict";
+    'use strict';
 
     $.widget('amadeco.amadecoQuickView', {
         options: {
+            lazy: true,
             handlerClassName: 'quickview-button',
             modalClass: '#quickview-modal',
             modalTitle: $t('Quick View'),
@@ -30,37 +32,24 @@ define([
             enableBtnGoToProduct: true,
             enableNav: false,
             selectors: {
-                // Product & container selectors
                 btnContainer: '.product-item-photo-container',
                 productItem: '.product-item',
                 productPhotoLink: 'a.product.photo[href!=""][href]',
                 priceBox: '[data-role=priceBox]',
-
-                // Button & container selectors
                 btnContainerClass: 'quickview-btn-container',
-
-                // Form selectors
                 addToCartForm: '#quickview_product_addtocart_form',
                 addToCartButton: '.action.tocart',
                 addToCartButtonDisabledClass: 'disabled',
-
-                // Tab selectors
                 reviewTabSelector: '#tab-label-reviews-title[data-role=trigger]',
                 tabTitleClass: '.quickview-tab-title',
                 tabContentClass: '.quickview-tab-content',
                 bundleTabLink: '#tab-label-quickview-product-bundle-title',
                 bundleButton: '#bundle-slide',
-
-                // Product type specific selectors
                 downloadableLinks: '#downloadable-links-list',
                 qtyField: '.box-tocart .field.qty',
                 reviewsActions: '.reviews-actions a.view, .reviews-actions a.add',
-
-                // Misc selectors
                 estimateRates: '[data-block=product-estimate-rates]',
                 videoCloseBtn: '.fotorama__video-close.fotorama-show-control',
-
-                // CSS classes
                 htmlOpenModalClass: 'open-modal',
                 bodyOpenedClass: 'quickview-opened',
                 initializedClass: 'quickview-initialized',
@@ -77,122 +66,136 @@ define([
         /**
          * Modal element cache
          * @type {jQuery|null}
+         * @private
          */
-        $modal: null,
+        _$modal: null,
 
         /**
-         * Initialize the QuickView widget
-         *
+         * IntersectionObserver instance for lazy init
+         * @type {IntersectionObserver|null}
+         * @private
+         */
+        _observer: null,
+
+        /**
+         * Initializes the QuickView widget.
          * @private
          */
         _create: function () {
-            window.amadecoQuickViewOptions = this.options;
-            this.$modal = $(this.options.modalClass);
-            this._bind();
+            this._options = this.options;
+            this._$modal = $(this.options.modalClass);
+
+            if (this.options.lazy && 'IntersectionObserver' in window) {
+                this._setupLazyObserver();
+            } else {
+                this._initialize();
+            }
         },
 
         /**
-         * Initialize QuickView buttons and bind events
-         *
+         * Sets up IntersectionObserver for lazy initialization.
          * @private
-         * @return {Object} this
          */
-        _bind: function() {
-            var self = this,
-                $el = this.element,
-                $parent = $el.closest(this.options.selectors.productItem),
-                $productLink,
-                productId;
+        _setupLazyObserver: function () {
+            const self = this;
+            this._observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        self._initialize();
+                        self._observer.disconnect();
+                    }
+                });
+            }, { rootMargin: '100px' });
 
-            // Find product link and ID
-            $productLink = $parent.find(this.options.selectors.productPhotoLink);
-            productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') || $parent.attr('data-product-id');
+            this._observer.observe(this.element[0]);
+        },
 
-            // Skip initialization if product ID is missing
-            if (typeof(productId) === 'undefined') {
-                return;
+        /**
+         * Sets up the widget, creates buttons, and binds events.
+         * @private
+         * @returns {Object} Chainable this
+         */
+        _initialize: function () {
+            const $el = this.element;
+            const $parent = $el.closest(this.options.selectors.productItem);
+            const $productLink = $parent.find(this.options.selectors.productPhotoLink);
+            const productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') ||
+                              $parent.attr('data-product-id');
+            const productHref = $productLink.prop('href') || '';
+
+            if (typeof productId === 'undefined') {
+                console.warn('QuickView initialization skipped: Missing product ID');
+                return this;
             }
 
-            // Skip if already initialized or disabled
             if ($el.hasClass(this.options.selectors.disabledClass) ||
                 $el.hasClass(this.options.selectors.initializedClass)) {
                 return this;
             }
 
-            // Create quickview button
-            this._createQuickViewButton($el);
-
-            // Mark as initialized
+            this._createQuickViewButton($el, productId, productHref);
             $el.addClass(this.options.selectors.initializedClass);
 
             return this;
         },
 
         /**
-         * Create QuickView button and attach event handlers
-         *
+         * Creates the QuickView button and attaches delegated event handler.
+         * Stores product data on button to avoid repeated DOM queries.
          * @private
-         * @param {jQuery} $el - Element to attach QuickView button to
+         * @param {jQuery} $el - The element to attach the button to.
+         * @param {string} productId - Cached product ID.
+         * @param {string} productHref - Cached product link href.
          */
-        _createQuickViewButton: function($el) {
-            var self = this,
-                $btnContainer = $el.find(this.options.selectors.btnContainer),
-                $btnQuickView,
-                $btnQuickViewBtn;
-
-            // Create button container
-            $btnQuickView = $('<div />', {
+        _createQuickViewButton: function ($el, productId, productHref) {
+            const self = this;
+            const $btnContainer = $el.find(this.options.selectors.btnContainer);
+            const $btnQuickView = $('<div />', {
                 'class': this.options.selectors.btnContainerClass,
                 'data-action': 'quickview'
             });
-
-            // Create button
-            $btnQuickViewBtn = $('<button />', {
+            const $btnQuickViewBtn = $('<button />', {
                 'type': 'button',
                 'title': this.options.btnTitle,
                 'class': this.options.handlerClassName,
                 'data-target': this.options.modalClass,
                 'data-toggle': 'modal',
-                'tabindex': '-1'
+                'tabindex': '-1',
+                'data-product-id': productId,
+                'data-product-href': productHref
             }).text(this.options.btnLabel);
 
-            // Append button to container
             $btnQuickViewBtn.appendTo($btnQuickView);
 
-            // Insert button into DOM
             if (this.options.btnPlacement === 'before') {
                 $btnContainer.prepend($btnQuickView);
             } else {
                 $btnContainer.append($btnQuickView);
             }
 
-            // Bind click handler
-            $btnQuickViewBtn.on('touch.amadecoQuickView click.amadecoQuickView', function() {
-                self._handleQuickViewClick($(this));
+            $el.on('click.amadecoQuickView touch.amadecoQuickView', `.${this.options.handlerClassName}`, (event) => {
+                event.preventDefault();
+                self._handleQuickViewClick($(event.currentTarget));
             });
         },
 
         /**
-         * Handle QuickView button click
-         * Load product data via AJAX and display in modal
-         *
+         * Handles the QuickView button click, loads product data via AJAX, and opens modal.
+         * Uses data attributes to avoid DOM traversals.
          * @private
-         * @param {jQuery} $button - Clicked button element
+         * @param {jQuery} $button - The clicked button element.
          */
-        _handleQuickViewClick: function($button) {
-            var self = this,
-                $parent = $button.closest(this.options.selectors.productItem),
-                $productLink = $parent.find(this.options.selectors.productPhotoLink),
-                productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') || $parent.attr('data-product-id'),
-                optionsModal;
+        _handleQuickViewClick: function ($button) {
+            const self = this;
+            const productId = $button.data('product-id');
+            const productHref = $button.data('product-href');
 
-            // Skip if product ID is missing
-            if (typeof(productId) === 'undefined') {
+            if (typeof productId === 'undefined') {
+                console.warn('QuickView click ignored: Missing product ID');
                 return;
             }
 
-            // Modal options configuration
-            optionsModal = {
+            const optionsModal = {
                 type: 'popup',
                 responsive: true,
                 innerScroll: true,
@@ -200,7 +203,6 @@ define([
                 buttons: []
             };
 
-            // Load product data via AJAX
             $.ajax({
                 url: urlBuilder.build('quickview/index/view'),
                 showLoader: true,
@@ -210,84 +212,70 @@ define([
                     id: productId,
                     form_key: $.mage.cookies.get('form_key')
                 }
-            }).done(function(data) {
-                // Update modal content
-                self.$modal.html(data)
-                    .trigger('contentUpdated');
-
-                // Initialize rate estimation if present
+            }).done((data) => {
+                self._$modal.html(data).trigger('contentUpdated');
+              
                 self._initializeEstimateRates();
-
-                // Bind product-specific functionality
+              
                 self._bindProductConfigurable()
                     ._bindProductBundle()
                     ._bindProductDownloadable()
-                    ._bindProductReviews($productLink)
+                    ._bindProductReviews(productHref)
                     ._bindProductAddToCart();
-
-                // Add Go To Product button if enabled
-                self._addGoToProductButton(optionsModal, $productLink);
-
-                // Open modal with configured options
+                self._addGoToProductButton(optionsModal, productHref);
                 self._openQuickViewModal(optionsModal);
+            }).fail((jqXHR, textStatus, errorThrown) => {
+                console.error('QuickView AJAX failed:', textStatus, errorThrown);
             });
         },
 
         /**
-         * Initialize shipping rate estimation if present
-         *
+         * Initializes shipping rate estimation if the block exists.
          * @private
          */
-        _initializeEstimateRates: function() {
-            var $estimateRates = this.$modal.find(this.options.selectors.estimateRates);
+        _initializeEstimateRates: function () {
+            const $estimateRates = this._$modal.find(this.options.selectors.estimateRates);
             if ($estimateRates.length) {
                 $estimateRates.applyBindings();
             }
         },
 
         /**
-         * Add Go To Product button to modal if enabled
-         *
+         * Adds 'Go To Product' button to modal if enabled.
          * @private
-         * @param {Object} optionsModal - Modal options object
-         * @param {jQuery} $productLink - Product link element
+         * @param {Object} optionsModal - Modal configuration object.
+         * @param {string} productHref - Product link href.
          */
-        _addGoToProductButton: function(optionsModal, $productLink) {
-            if (this.options.enableBtnGoToProduct && $productLink.length) {
-                $.extend(true, optionsModal, {
-                    buttons: [{
-                        text: this.options.texts.goToProductText,
-                        class: 'action secondary',
-                        click: function() {
-                            window.location.href = $productLink.prop('href');
-                        }
-                    }]
+        _addGoToProductButton: function (optionsModal, productHref) {
+            if (this.options.enableBtnGoToProduct && productHref) {
+                optionsModal.buttons.push({
+                    text: this.options.texts.goToProductText,
+                    class: 'action secondary',
+                    click: () => {
+                        window.location.href = productHref;
+                    }
                 });
             }
         },
 
         /**
-         * Open QuickView modal with configured options
-         *
+         * Opens the QuickView modal and manages body classes for state.
          * @private
-         * @param {Object} optionsModal - Modal options object
+         * @param {Object} optionsModal - Modal configuration object.
          */
-        _openQuickViewModal: function(optionsModal) {
-            var self = this;
-
-            self.$modal.modal(optionsModal)
+        _openQuickViewModal: function (optionsModal) {
+            const self = this;
+            this._$modal.modal(optionsModal)
                 .trigger('openModal')
-                .on('modalopened.amadecoQuickView', function() {
-                    $('html').addClass(self.options.selectors.htmlOpenModalClass);
-                    $('body').addClass(self.options.selectors.bodyOpenedClass);
+                .on('modalopened.amadecoQuickView', () => {
+                    $('html').addClass(this.options.selectors.htmlOpenModalClass);
+                    $('body').addClass(this.options.selectors.bodyOpenedClass);
                 })
-                .on('modalclosed.amadecoQuickView', function() {
-                    $('html').removeClass(self.options.selectors.htmlOpenModalClass);
-                    $('body').removeClass(self.options.selectors.bodyOpenedClass);
-                    self.$modal.empty();
-
-                    // Bugfix: Fotorama ProductVideo
-                    var $videoCloseBtn = $(self.options.selectors.videoCloseBtn);
+                .on('modalclosed.amadecoQuickView', () => {
+                    $('html').removeClass(this.options.selectors.htmlOpenModalClass);
+                    $('body').removeClass(this.options.selectors.bodyOpenedClass);
+                    self._$modal.empty();
+                    const $videoCloseBtn = $(this.options.selectors.videoCloseBtn);
                     if ($videoCloseBtn.length) {
                         $videoCloseBtn.remove();
                     }
@@ -295,96 +283,90 @@ define([
         },
 
         /**
-         * Bind configurable product functionality
-         *
-         * @private
-         * @return {Object} this
+         * Public method to retrieve the widget's options for external access.
+         * @public
+         * @param {string} [key] - Optional specific option key to retrieve.
+         * @returns {Object|string|undefined} All options or value for specific key.
          */
-        _bindProductConfigurable: function() {
-            // Will be implemented in future releases
+        getOptions: function (key) {
+            if (key) {
+                return this.options[key];
+            }
+            return $.extend(true, {}, this.options);
+        },
+
+        /**
+         * Placeholder for configurable product bindings (extendable).
+         * @private
+         * @returns {Object} Chainable this
+         */
+        _bindProductConfigurable: function () {
             return this;
         },
 
         /**
-         * Bind bundle product functionality
-         * Hide bundle tab initially and show it when bundle button is clicked
-         *
+         * Binds bundle product functionality, hiding tab until button click.
          * @private
-         * @return {Object} this
+         * @returns {Object} Chainable this
          */
-        _bindProductBundle: function() {
-            var $bundleBtn = this.$modal.find(this.options.selectors.bundleButton),
-                $bundleTabLink = this.$modal.find(this.options.selectors.bundleTabLink);
-
+        _bindProductBundle: function () {
+            const $bundleBtn = this._$modal.find(this.options.selectors.bundleButton);
+            const $bundleTabLink = this._$modal.find(this.options.selectors.bundleTabLink);
             if ($bundleBtn.length) {
                 $bundleTabLink.parent().hide();
-
-                $bundleBtn.off('click')
-                    .on('click', function(e) {
-                        e.preventDefault();
-
-                        $bundleTabLink.parent()
-                            .show()
-                            .trigger('click');
-                    });
-            }
-
-            return this;
-        },
-
-        /**
-         * Bind downloadable product functionality
-         * Hide quantity field for downloadable products
-         *
-         * @private
-         * @return {Object} this
-         */
-        _bindProductDownloadable: function() {
-            if (this.$modal.find(this.options.selectors.downloadableLinks).length) {
-                this.$modal.find(this.options.selectors.qtyField).hide();
+                $bundleBtn.off('click').on('click', (e) => {
+                    e.preventDefault();
+                    $bundleTabLink.parent().show().trigger('click');
+                });
             }
             return this;
         },
 
         /**
-         * Bind product reviews functionality
-         * Connect review tab links and review actions
-         *
+         * Binds downloadable product functionality, hiding qty if links present.
          * @private
-         * @param {jQuery} $productLink - Product link element
-         * @return {Object} this
+         * @returns {Object} Chainable this
          */
-        _bindProductReviews: function($productLink) {
-            var $reviewsTabLink = this.$modal.find(this.options.selectors.reviewTabSelector);
+        _bindProductDownloadable: function () {
+            if (this._$modal.find(this.options.selectors.downloadableLinks).length) {
+                this._$modal.find(this.options.selectors.qtyField).hide();
+            }
+            return this;
+        },
 
+        /**
+         * Binds reviews tab and actions.
+         * @private
+         * @param {string} productHref - Product link href (for extensibility).
+         * @returns {Object} Chainable this
+         */
+        _bindProductReviews: function (productHref) {
+            const $reviewsTabLink = this._$modal.find(this.options.selectors.reviewTabSelector);
             if ($reviewsTabLink.length) {
-                this.$modal.find(this.options.selectors.reviewsActions).click(function() {
+                this._$modal.find(this.options.selectors.reviewsActions).click(() => {
                     $reviewsTabLink.trigger('click');
                 });
             }
-
             return this;
         },
 
         /**
-         * Bind add to cart functionality
-         * Add form key to the add to cart form
-         *
+         * Binds add-to-cart form by injecting form key.
          * @private
-         * @return {Object} this
+         * @returns {Object} Chainable this
          */
-        _bindProductAddToCart: function() {
-            var $addToCartForm = this.$modal.find(this.options.selectors.addToCartForm);
-
+        _bindProductAddToCart: function () {
+            const $addToCartForm = this._$modal.find(this.options.selectors.addToCartForm);
             if ($addToCartForm.length) {
-                var $formKeyInput = $('<input />')
-                    .attr('type', 'hidden')
-                    .attr('name', 'form_key')
-                    .val($.mage.cookies.get('form_key'));
-
+                const formKey = $.mage.cookies.get('form_key');
+                const $formKeyInput = $('<input />', {
+                    type: 'hidden',
+                    name: 'form_key',
+                    value: formKey
+                });
+              
                 $addToCartForm.prepend($formKeyInput);
             }
-
             return this;
         }
     });

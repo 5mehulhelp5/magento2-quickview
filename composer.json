@@ -1,7 +1,6 @@
 {
     "name": "amadeco/module-quickview",
     "type": "magento2-module",
-    "version": "1.0.1",
     "license": [
         "OSL-3.0"
     ],

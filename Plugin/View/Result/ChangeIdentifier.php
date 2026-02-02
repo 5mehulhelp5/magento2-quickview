@@ -16,10 +16,15 @@ use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\View\Result\Layout;
 
 /**
- * Plugin to change element identifiers in the response
+ * Plugin to modify element identifiers in the response output.
+ * Allows reusing core templates by scoping IDs to the QuickView modal.
  */
 class ChangeIdentifier
 {
+    /**
+     * @param RequestInterface $request
+     * @param Data $dataHelper
+     */
     public function __construct(
         private readonly RequestInterface $request,
         private readonly Data $dataHelper
@@ -39,28 +44,37 @@ class ChangeIdentifier
         Layout $result,
         ResponseInterface $httpResponse
     ): Layout {
-        if ($this->request->getFullActionName() != 'quickview_index_view') {
+        // 1. Context Check: Only run on the specific QuickView layout handle
+        if ($this->request->getFullActionName() !== 'quickview_index_view') {
             return $result;
         }
 
+        // 2. Config Check: Is module enabled?
         if (!$this->dataHelper->isEnabled()) {
             return $result;
         }
 
         $content = (string)$httpResponse->getContent();
-        $identifier = $this->dataHelper->getWrapperIdentifier();
+        $wrapperIdentifier = $this->dataHelper->getWrapperIdentifier();
 
-        if (str_contains($content, $identifier)) {
-            $identifierToSearchAndReplace = $this->dataHelper->getIdentifierReplacements();
-
-            $content = str_replace(
-                array_keys($identifierToSearchAndReplace),
-                array_values($identifierToSearchAndReplace),
-                $content
-            );
-
-            $httpResponse->setContent($content);
+        // 3. Performance Guard: Scan for the wrapper ID first. 
+        // If the wrapper isn't there, we don't need to do any heavy lifting.
+        if (!str_contains($content, $wrapperIdentifier)) {
+            return $result;
         }
+
+        // 4. Data Retrieval
+        $replacements = $this->dataHelper->getIdentifierReplacements();
+
+        if (empty($replacements)) {
+            return $result;
+        }
+
+        // 5. Execution: strtr is the fastest method for 1:1 string mapping in PHP.
+        // It prevents recursive replacement issues and is memory efficient.
+        $content = strtr($content, $replacements);
+
+        $httpResponse->setContent($content);
 
         return $result;
     }

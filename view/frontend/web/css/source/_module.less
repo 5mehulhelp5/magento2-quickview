@@ -3,8 +3,27 @@
 //  _____________________________________________
 
 & when (@media-common = true) {
+
     .quickview-button {
         &:extend(.btn all, .btn-secondary all, .btn-sm);
+    }
+
+    .amadeco-quickview {
+        .modal-header {
+            padding-bottom: 0;
+        }
+
+        .loading-mask {
+            margin: @indent__base auto;
+            text-align: center;
+            display: block;
+            position: static;
+
+            img {
+                position: initial;
+                z-index: initial;
+            }
+        }
     }
 
     .product-item-info {
@@ -62,6 +81,7 @@
             width: 100%;
         }
     }
+
 }
 
 //
@@ -69,6 +89,7 @@
 //  _____________________________________________
 
 .media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {
+
     #quickview-modal .product.data.items {
         .lib-data-tabs(
             @_tab-control-border-color: @secondary__color,
@@ -84,4 +105,5 @@
             }
         }
     }
+
 }

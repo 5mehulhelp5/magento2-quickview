@@ -11,6 +11,7 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
+
         <referenceBlock name="product.info">
             <block class="Magento\Catalog\Block\Product\View" name="bundle.summary" as="form_bottom" template="Magento_Bundle::catalog/product/view/summary.phtml">
                 <block class="Magento\Catalog\Pricing\Render" name="product.price.render.bundle.customization" before="-">
@@ -91,5 +92,6 @@
         </referenceBlock>
 
         <move element="product.info" destination="bundle.options.container" before="-"/>
+
     </body>
 </page>

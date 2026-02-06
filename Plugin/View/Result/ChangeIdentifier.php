@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace Amadeco\QuickView\Plugin\View\Result;
 
-use Amadeco\QuickView\Helper\Data;
+use Amadeco\QuickView\Model\Config;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\View\Result\Layout;
@@ -22,12 +22,17 @@ use Magento\Framework\View\Result\Layout;
 class ChangeIdentifier
 {
     /**
+     * Full action view controller name for Amadeco_Quickview
+     */
+    private const string KEY_FULL_ACTION_NAME = 'quickview_index_view';
+
+    /**
      * @param RequestInterface $request
      * @param Data $dataHelper
      */
     public function __construct(
         private readonly RequestInterface $request,
-        private readonly Data $dataHelper
+        private readonly Config $config
     ) {}
 
     /**
@@ -50,21 +55,21 @@ class ChangeIdentifier
         }
 
         // 2. Config Check: Is module enabled?
-        if (!$this->dataHelper->isEnabled()) {
+        if (!$this->config->isEnabled()) {
             return $result;
         }
 
         $content = (string)$httpResponse->getContent();
-        $wrapperIdentifier = $this->dataHelper->getWrapperIdentifier();
+        $wrapperIdentifier = $this->config->getWrapperIdentifier();
 
-        // 3. Performance Guard: Scan for the wrapper ID first. 
+        // 3. Performance Guard: Scan for the wrapper ID first.
         // If the wrapper isn't there, we don't need to do any heavy lifting.
         if (!str_contains($content, $wrapperIdentifier)) {
             return $result;
         }
 
         // 4. Data Retrieval
-        $replacements = $this->dataHelper->getIdentifierReplacements();
+        $replacements = $this->config->getIdentifierReplacements();
 
         if (empty($replacements)) {
             return $result;

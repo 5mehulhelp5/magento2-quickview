@@ -1,16 +1,3 @@
-### Requirement Analysis
-
-Based on the code refactoring analysis and the transition to strict PHP 8.3 typing and modern frontend performance standards (IntersectionObserver), the `README.md` requires updates to reflect:
-
-1. **Strict PHP 8.3 Requirement:** The code now utilizes constructor promotion and readonly classes.
-2. **Performance Improvements:** Explicit mention of the new Lazy Loading capability.
-3. **Magento Version:** Update compatibility to reflect the current environment (2.4.8).
-
-### Implementation
-
-Here is the updated `README.md`.
-
-```markdown
 # Amadeco QuickView for Magento 2
 
 [![Latest Stable Version](https://img.shields.io/github/v/release/Amadeco/magento2-quickview)](https://github.com/Amadeco/magento2-quickview/releases)

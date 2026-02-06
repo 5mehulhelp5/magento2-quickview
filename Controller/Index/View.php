@@ -64,10 +64,6 @@ class View extends Action implements HttpGetActionInterface, HttpPostActionInter
 
         // 1. Security & Request Validation
         if (!$request->isAjax() || !$this->formKeyValidator->validate($request)) {
-            $this->logger->warning('QuickView 404: Invalid AJAX request or Form Key', [
-                'is_ajax' => $isAjax,
-                'form_key_valid' => $this->formKeyValidator->validate($request)
-            ]);
             return $this->resultForwardFactory->create()->forward('noroute');
         }
 

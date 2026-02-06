@@ -105,22 +105,19 @@ Target the `amadeco.quickview.init` block and define arguments in `jsLayout`:
         </referenceBlock>
     </body>
 </page>
+```
 
-CSS Customization
+### CSS Customization
 
 The module includes minimal styling. You can extend the styling in your theme by targeting these classes:
 CSS
 
+```css
 .quickview-button       /* The trigger button */
 .quickview-wrapper      /* The main modal wrapper */
 .quickview-media        /* Left column (Images) */
 .quickview-main         /* Right column (Details) */
-
-
-### Why this is better:
-1.  **Centralized Config:** All config remains in XML/PHP, adhering to Magento's architecture.
-2.  **Translation Support:** XML arguments support `translate="true"` (as seen in the example), which is harder to handle in a raw JS file mixin.
-3.  **Clean Code:** No need to pollute the frontend with `mixins` just to change a CSS selector.
+```
 
 ## Contributing
 

@@ -22,7 +22,14 @@
     ],
     "require": {
         "magento/framework": ">=100.0.0",
-        "magento/module-catalog": ">=100.0.0"
+        "magento/module-catalog": ">=100.0.0",
+        "magento/module-checkout": ">=100.0.0",
+        "magento/module-swatches": ">=100.0.0",
+        "magento/module-configurable-product": ">=100.0.0",
+        "magento/module-bundle": ">=100.0.0",
+        "magento/module-downloadable": ">=100.0.0",
+        "magento/module-grouped-product": ">=100.0.0",
+        "magento/module-catalog-inventory": ">=100.0.0"
     },
     "autoload": {
         "files": [

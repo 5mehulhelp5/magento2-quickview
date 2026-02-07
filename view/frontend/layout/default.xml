@@ -12,7 +12,9 @@
     xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceContainer name="before.body.end">
-            <block ifconfig="quickview/general/enable" class="Amadeco\QuickView\Block\Init" name="amadeco.quickview.init"/>
+            <block ifconfig="quickview/general/enable"
+                class="Amadeco\QuickView\Block\Init"
+                name="amadeco.quickview.init"/>
         </referenceContainer>
     </body>
 </page>

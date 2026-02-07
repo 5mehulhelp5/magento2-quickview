@@ -11,6 +11,7 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
+
         <!-- Product download samples -->
         <referenceBlock name="quickview.product.info.main">
             <block ifconfig="quickview/modal/show_product_downloadable_sample" class="Magento\Downloadable\Block\Catalog\Product\Samples" name="product.info.downloadable.samples" as="samples" template="Magento_Downloadable::catalog/product/samples.phtml" after="product.info.overview" />
@@ -43,5 +44,6 @@
         </referenceContainer>
 
         <move element="product.info" destination="product.type.downloads" />
+
     </body>
 </page>

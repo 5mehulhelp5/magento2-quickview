@@ -6,7 +6,13 @@
  * @package    Amadeco_QuickView
  * @author     Ilan Parmentier
  */
-/** @var string $layoutContent */
+
+/**
+ * ResultPage (isIsolated => true) = $layoutContent
+ * $block & $escaper are not available
+ *
+ * @var string $layoutContent
+ */
 ?>
-<link rel="stylesheet" type="text/css" href="<?= $this->getViewFileUrl('mage/gallery/gallery.css') ?>">
+<link rel="stylesheet" type="text/css" href="<?= /* noEscape */ $this->getViewFileUrl('mage/gallery/gallery.css') ?>">
 <?= /* @noEscape */ $layoutContent ?>

@@ -11,6 +11,7 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
+
         <!-- Magento_ConfigurableProduct -->
         <referenceContainer name="product.info.type">
             <block class="Magento\ConfigurableProduct\Block\Product\View\Type\Configurable" name="product.info.configurable" as="product_type_data" template="Magento_Catalog::product/view/type/default.phtml">
@@ -35,5 +36,6 @@
                 </arguments>
             </block>
         </referenceBlock>
+
     </body>
 </page>

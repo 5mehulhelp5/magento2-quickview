@@ -10,14 +10,15 @@ declare(strict_types=1);
 
 namespace Amadeco\QuickView\Block;
 
-use Amadeco\QuickView\Helper\Data;
-use Magento\Framework\App\ObjectManager;
+use Amadeco\QuickView\Model\Config;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\View\Asset\Repository as AssetRepository;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 
 /**
  * QuickView Init Block
+ * * Merges XML layout configuration with backend dynamic data.
  */
 class Init extends Template
 {
@@ -27,30 +28,25 @@ class Init extends Template
     protected $_template = 'Amadeco_QuickView::init.phtml';
 
     /**
-     * @var Data
-     */
-    private readonly Data $dataHelper;
-
-    /**
-     * @var SerializerInterface
-     */
-    private readonly SerializerInterface $serializer;
-
-    /**
      * @param Context $context
-     * @param Data $dataHelper
-     * @param array $data
-     * @param SerializerInterface|null $serializer
+     * @param Config $config
+     * @param SerializerInterface $serializer
+     * @param AssetRepository $assetRepository
+     * @param array<string, mixed> $data
      */
     public function __construct(
         Context $context,
-        Data $dataHelper,
-        array $data = [],
-        ?SerializerInterface $serializer = null
+        protected readonly Config $config,
+        protected readonly SerializerInterface $serializer,
+        protected readonly AssetRepository $assetRepository,
+        array $data = []
     ) {
         parent::__construct($context, $data);
-        $this->dataHelper = $dataHelper;
-        $this->serializer = $serializer ?: ObjectManager::getInstance()->get(SerializerInterface::class);
+
+        // Ensure jsLayout is initialized if not provided
+        $this->jsLayout = isset($data['jsLayout']) && is_array($data['jsLayout'])
+            ? $data['jsLayout']
+            : [];
     }
 
     /**
@@ -60,10 +56,9 @@ class Init extends Template
      */
     protected function _toHtml(): string
     {
-        if (!$this->dataHelper->isEnabled()) {
+        if (!$this->config->isEnabled()) {
             return '';
         }
-
         return parent::_toHtml();
     }
 
@@ -74,27 +69,35 @@ class Init extends Template
      */
     public function getElementsSelector(): string
     {
-        return $this->dataHelper->getElementsSelector();
+        $elementsSelector = $this->config->getElementsSelector();
+        if (isset($this->jsLayout['elementsSelector'])) {
+            $elementsSelector = $this->jsLayout['elementsSelector'];
+        }
+        return $elementsSelector;
     }
 
     /**
      * Get QuickView configuration for JavaScript
+     * Merges the static XML config (jsLayout) with dynamic backend data.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getJsConfig(): array
     {
-        return [
-            'btnLabel' => $this->dataHelper->getButtonLabel(),
-            'modalTitle' => $this->dataHelper->getModalTitle(),
-            'enableBtnGoToProduct' => $this->dataHelper->showButtonGoDetail(),
+        $config = [
+            'btnLabel' => $this->config->getButtonLabel(),
+            'modalTitle' => $this->config->getModalTitle(),
+            'enableBtnGoToProduct' => $this->config->showButtonGoDetail(),
+            'loaderUrl' => $this->getLoaderUrl(),
             'selectors' => [
-                'btnContainer' => $this->dataHelper->getButtonContainerSelector(),
-                'reviewTabSelector' => $this->dataHelper->getReviewTabSelector(),
-                'tabTitleClass' => $this->dataHelper->getTabTitleClass(),
-                'tabContentClass' => $this->dataHelper->getTabContentClass()
+                'btnContainer' => $this->config->getButtonContainerSelector(),
+                'reviewTabSelector' => $this->config->getReviewTabSelector(),
+                'tabTitleClass' => $this->config->getTabTitleClass(),
+                'tabContentClass' => $this->config->getTabContentClass()
             ]
         ];
+
+        return array_replace_recursive($config, $this->jsLayout);
     }
 
     /**
@@ -105,5 +108,17 @@ class Init extends Template
     public function getSerializedConfig(): string
     {
         return $this->serializer->serialize($this->getJsConfig());
+    }
+
+    /**
+     * Retrieve the standard Magento Loader URL.
+     * * Uses the 'images/loader-1.gif' file from the active theme.
+     *
+     * @return string
+     */
+    private function getLoaderUrl(): string
+    {
+        // 'images/loader-1.gif' without a module prefix looks in the current theme context
+        return $this->assetRepository->getUrlWithParams('images/loader-1.gif', []);
     }
 }

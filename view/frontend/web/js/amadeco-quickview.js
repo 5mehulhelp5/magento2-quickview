@@ -7,20 +7,27 @@
  */
 define([
     'jquery',
-    'mage/url',
     'mage/translate',
-    'Magento_Ui/js/modal/modal',
     'jquery-ui-modules/widget'
-], function (
-    $,
-    urlBuilder,
-    $t,
-    modal,
-    widget
-) {
+], function ($, $t) {
     'use strict';
 
+    /**
+     * Amadeco QuickView jQuery UI widget.
+     *
+     * OPTIMIZATION NOTE:
+     * This widget implements a "Double Lazy" strategy to maximize TTI (Time to Interactive):
+     * 1. Lazy Rendering: The QuickView button is only injected into the DOM when the product enters the viewport (IntersectionObserver).
+     * 2. Lazy Loading: Heavy dependencies (Knockout, Modal, UrlBuilder) are only loaded via RequireJS when the user actually clicks the button.
+     *
+     * @class
+     * @name amadeco.amadecoQuickView
+     */
     $.widget('amadeco.amadecoQuickView', {
+        /**
+         * Widget options.
+         * @type {Object}
+         */
         options: {
             lazy: true,
             handlerClassName: 'quickview-button',
@@ -30,344 +37,546 @@ define([
             btnTitle: $t('Quick overview of the product'),
             btnPlacement: 'before',
             enableBtnGoToProduct: true,
-            enableNav: false,
+            loaderUrl: null,
             selectors: {
                 btnContainer: '.product-item-photo-container',
                 productItem: '.product-item',
-                productPhotoLink: 'a.product.photo[href!=""][href]',
+                productPhotoLink: 'a.product.photo',
                 priceBox: '[data-role=priceBox]',
                 btnContainerClass: 'quickview-btn-container',
                 addToCartForm: '#quickview_product_addtocart_form',
-                addToCartButton: '.action.tocart',
-                addToCartButtonDisabledClass: 'disabled',
                 reviewTabSelector: '#tab-label-reviews-title[data-role=trigger]',
-                tabTitleClass: '.quickview-tab-title',
-                tabContentClass: '.quickview-tab-content',
-                bundleTabLink: '#tab-label-quickview-product-bundle-title',
+                bundleTabLink: '#tab-label-product\\.type\\.bundle\\.options-title',
                 bundleButton: '#bundle-slide',
                 downloadableLinks: '#downloadable-links-list',
                 qtyField: '.box-tocart .field.qty',
                 reviewsActions: '.reviews-actions a.view, .reviews-actions a.add',
-                estimateRates: '[data-block=product-estimate-rates]',
-                videoCloseBtn: '.fotorama__video-close.fotorama-show-control',
                 htmlOpenModalClass: 'open-modal',
                 bodyOpenedClass: 'quickview-opened',
                 initializedClass: 'quickview-initialized',
-                disabledClass: 'quickview-disabled'
+                contentWrapperClass: 'quickview-content-wrapper',
+                videoCloseBtn: '.fotorama__video-close.fotorama-show-control',
+                dynamicModalTitle: '.quickview-modal-title'
             },
             texts: {
-                addToCartTextWhileAdding: $t('Adding...'),
-                addToCartTextAdded: $t('Added'),
-                addToCartTextDefault: $t('Add to Cart'),
-                goToProductText: $t('Go To Product')
+                goToProductText: $t('Go to Product Infos'),
+                errorLoading: $t('Unable to load product details. Please try again.')
             }
         },
 
         /**
-         * Modal element cache
-         * @type {jQuery|null}
          * @private
+         * @type {jQuery|null}
          */
         _$modal: null,
 
         /**
-         * IntersectionObserver instance for lazy init
-         * @type {IntersectionObserver|null}
          * @private
+         * @type {IntersectionObserver|null}
          */
         _observer: null,
 
         /**
-         * Initializes the QuickView widget.
          * @private
+         * @type {jQuery|null}
+         */
+        _$boundElement: null,
+
+        /**
+         * Widget initialization.
+         * Only sets up the Observer. Does NOT touch the DOM yet.
+         *
+         * @private
+         * @return {void}
          */
         _create: function () {
-            this._options = this.options;
-            this._$modal = $(this.options.modalClass);
-
+            // If lazy loading is enabled and supported, wait for scroll.
             if (this.options.lazy && 'IntersectionObserver' in window) {
                 this._setupLazyObserver();
             } else {
-                this._initialize();
+                // Fallback for old browsers or if lazy is disabled
+                this._initializeButton();
             }
         },
 
         /**
-         * Sets up IntersectionObserver for lazy initialization.
+         * Clean up widget instance.
+         *
          * @private
+         * @return {void}
+         */
+        _destroy: function () {
+            if (this._observer) {
+                this._observer.disconnect();
+                this._observer = null;
+            }
+
+            // Remove the container we injected
+            this.element.find('.' + this.options.selectors.btnContainerClass).remove();
+            this.element.removeClass(this.options.selectors.initializedClass);
+
+            this._disposeModalContent();
+        },
+
+        /**
+         * Setup IntersectionObserver to inject the "Quick View" button only when visible.
+         * This reduces initial DOM complexity.
+         *
+         * @private
+         * @return {void}
          */
         _setupLazyObserver: function () {
-            const self = this;
-            this._observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
+            var self = this;
+
+            this._observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
                     if (entry.isIntersecting) {
-                        self._initialize();
-                        self._observer.disconnect();
+                        self._initializeButton();
+                        if (self._observer) {
+                            self._observer.disconnect();
+                            self._observer = null;
+                        }
                     }
                 });
-            }, { rootMargin: '100px' });
+            }, {
+                rootMargin: '100px' // Pre-load buttons slightly before they appear
+            });
 
-            this._observer.observe(this.element[0]);
+            if (this.element && this.element[0]) {
+                this._observer.observe(this.element[0]);
+            }
         },
 
         /**
-         * Sets up the widget, creates buttons, and binds events.
+         * Parses product data and injects the QuickView button into the DOM.
+         * This is "Phase 1" of the logic: Lightweight DOM manipulation only.
+         *
          * @private
-         * @returns {Object} Chainable this
+         * @return {this}
          */
-        _initialize: function () {
-            const $el = this.element;
-            const $parent = $el.closest(this.options.selectors.productItem);
-            const $productLink = $parent.find(this.options.selectors.productPhotoLink);
-            const productId = $parent.find(this.options.selectors.priceBox).attr('data-product-id') ||
-                              $parent.attr('data-product-id');
-            const productHref = $productLink.prop('href') || '';
+        _initializeButton: function () {
+            var $el = this.element,
+                $parent = $el.closest(this.options.selectors.productItem),
+                $priceBox = $parent.find(this.options.selectors.priceBox),
+                $productLink = $parent.find(this.options.selectors.productPhotoLink),
+                productId = $priceBox.attr('data-product-id') || $parent.attr('data-product-id'),
+                productHref = $productLink.attr('href');
 
-            if (typeof productId === 'undefined') {
-                console.warn('QuickView initialization skipped: Missing product ID');
+            if (!productId || $el.hasClass(this.options.selectors.initializedClass)) {
                 return this;
             }
 
-            if ($el.hasClass(this.options.selectors.disabledClass) ||
-                $el.hasClass(this.options.selectors.initializedClass)) {
-                return this;
-            }
-
-            this._createQuickViewButton($el, productId, productHref);
+            this._createQuickViewButton($el, String(productId), productHref || '');
             $el.addClass(this.options.selectors.initializedClass);
 
             return this;
         },
 
         /**
-         * Creates the QuickView button and attaches delegated event handler.
-         * Stores product data on button to avoid repeated DOM queries.
+         * Creates the Button wrapped in a Container.
+         *
          * @private
-         * @param {jQuery} $el - The element to attach the button to.
-         * @param {string} productId - Cached product ID.
-         * @param {string} productHref - Cached product link href.
+         * @param {jQuery} $el - The element context.
+         * @param {String} productId - The product entity ID.
+         * @param {String} productHref - The product URL.
+         * @return {void}
          */
         _createQuickViewButton: function ($el, productId, productHref) {
-            const self = this;
-            const $btnContainer = $el.find(this.options.selectors.btnContainer);
-            const $btnQuickView = $('<div />', {
+            var self = this,
+                $targetContainer = $el.find(this.options.selectors.btnContainer),
+                $wrapperDiv,
+                $button;
+
+            if (!$targetContainer.length) {
+                $targetContainer = $el;
+            }
+
+            // Prevent duplicate buttons
+            if ($targetContainer.find('.' + this.options.selectors.btnContainerClass).length) {
+                return;
+            }
+
+            // 1. Create Wrapper Div
+            $wrapperDiv = $('<div>', {
                 'class': this.options.selectors.btnContainerClass,
                 'data-action': 'quickview'
             });
-            const $btnQuickViewBtn = $('<button />', {
-                'type': 'button',
-                'title': this.options.btnTitle,
+
+            // 2. Create Button
+            $button = $('<button>', {
+                type: 'button',
+                title: this.options.btnTitle,
                 'class': this.options.handlerClassName,
-                'data-target': this.options.modalClass,
-                'data-toggle': 'modal',
-                'tabindex': '-1',
                 'data-product-id': productId,
                 'data-product-href': productHref
             }).text(this.options.btnLabel);
 
-            $btnQuickViewBtn.appendTo($btnQuickView);
+            // 3. Assemble
+            $wrapperDiv.append($button);
 
             if (this.options.btnPlacement === 'before') {
-                $btnContainer.prepend($btnQuickView);
+                $targetContainer.prepend($wrapperDiv);
             } else {
-                $btnContainer.append($btnQuickView);
+                $targetContainer.append($wrapperDiv);
             }
 
-            $el.on('click.amadecoQuickView touch.amadecoQuickView', `.${this.options.handlerClassName}`, (event) => {
-                event.preventDefault();
-                self._handleQuickViewClick($(event.currentTarget));
+            // 4. Bind Event using delegation
+            this._on($targetContainer, {
+                ['click .' + this.options.handlerClassName]: function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    // Pass the clicked button to the handler
+                    self._handleQuickViewClick($(event.currentTarget));
+                }
             });
         },
 
         /**
-         * Handles the QuickView button click, loads product data via AJAX, and opens modal.
-         * Uses data attributes to avoid DOM traversals.
+         * Handle click event on QuickView button.
+         * This triggers "Phase 2": Loading heavy dependencies and initializing the Modal.
+         *
          * @private
-         * @param {jQuery} $button - The clicked button element.
+         * @param {jQuery} $button - The clicked button.
+         * @return {void}
          */
         _handleQuickViewClick: function ($button) {
-            const self = this;
-            const productId = $button.data('product-id');
-            const productHref = $button.data('product-href');
+            var self = this,
+                productId = String($button.data('product-id') || ''),
+                productHref = String($button.data('product-href') || '');
 
-            if (typeof productId === 'undefined') {
-                console.warn('QuickView click ignored: Missing product ID');
+            if (!productId) {
                 return;
             }
 
-            const optionsModal = {
-                type: 'popup',
-                responsive: true,
-                innerScroll: true,
-                title: this.options.modalTitle,
-                buttons: []
-            };
+            // Visual feedback that something is happening (optional, but good UX for async loads)
+            $button.addClass('disabled').css('cursor', 'wait');
 
-            $.ajax({
-                url: urlBuilder.build('quickview/index/view'),
-                showLoader: true,
-                cache: true,
-                dataType: 'html',
-                data: {
-                    id: productId,
-                    form_key: $.mage.cookies.get('form_key')
-                }
-            }).done((data) => {
-                self._$modal.html(data).trigger('contentUpdated');
-              
-                self._initializeEstimateRates();
-              
-                self._bindProductConfigurable()
-                    ._bindProductBundle()
-                    ._bindProductDownloadable()
-                    ._bindProductReviews(productHref)
-                    ._bindProductAddToCart();
-                self._addGoToProductButton(optionsModal, productHref);
-                self._openQuickViewModal(optionsModal);
-            }).fail((jqXHR, textStatus, errorThrown) => {
-                console.error('QuickView AJAX failed:', textStatus, errorThrown);
+            // HEAVY DEPENDENCY LOADING
+            // We load these only when the user explicitly requests the interaction.
+            require([
+                'Magento_Ui/js/modal/modal',
+                'knockout',
+                'mage/url',
+                'mage/cookies'
+            ], function (modal, ko, urlBuilder) {
+                // Restore button state
+                $button.removeClass('disabled').css('cursor', '');
+
+                // Pass loaded dependencies to the logic methods
+                self._loadAndOpenModal(productId, productHref, modal, ko, urlBuilder);
             });
         },
 
         /**
-         * Initializes shipping rate estimation if the block exists.
+         * Ensure modal container exists and initialize the widget if needed.
+         *
          * @private
+         * @param {Function} modalWidget - The loaded Modal widget factory.
+         * @param {Array} initialButtons - Footer buttons
+         * @return {void}
          */
-        _initializeEstimateRates: function () {
-            const $estimateRates = this._$modal.find(this.options.selectors.estimateRates);
-            if ($estimateRates.length) {
-                $estimateRates.applyBindings();
+        _ensureModal: function (modalWidget, initialButtons) {
+            var self = this;
+
+            if (!this._$modal) {
+                this._$modal = $(this.options.modalClass);
             }
+
+            if (!this._$modal.length) {
+                console.warn('QuickView: Modal container not found. Check "modalClass" option.');
+                return;
+            }
+
+            if (this._$modal.data('mageModal')) {
+                return;
+            }
+
+            // Initialize the Magento Modal
+            modalWidget({
+                type: 'popup',
+                modalClass: 'amadeco-quickview',
+                responsive: true,
+                innerScroll: true,
+                title: this.options.modalTitle,
+                buttons: initialButtons || [],
+                closed: function () {
+                    self._onModalClose();
+                }
+            }, this._$modal);
         },
 
         /**
-         * Adds 'Go To Product' button to modal if enabled.
+         * Perform AJAX request and open modal.
+         *
          * @private
-         * @param {Object} optionsModal - Modal configuration object.
-         * @param {string} productHref - Product link href.
+         * @param {String} productId
+         * @param {String} productHref
+         * @param {Function} modal - The modal factory.
+         * @param {Object} ko - KnockoutJS instance.
+         * @param {Object} urlBuilder - Magento URL builder.
+         * @return {void}
          */
-        _addGoToProductButton: function (optionsModal, productHref) {
+        _loadAndOpenModal: function (productId, productHref, modal, ko, urlBuilder) {
+            var formKey = $.mage.cookies.get('form_key') || '',
+                loaderSrc = this.options.loaderUrl,
+                buttons = [];
+
+            // 1. Prepare buttons
             if (this.options.enableBtnGoToProduct && productHref) {
-                optionsModal.buttons.push({
+                buttons.push({
                     text: this.options.texts.goToProductText,
                     class: 'action secondary',
-                    click: () => {
+                    click: function () {
                         window.location.href = productHref;
                     }
                 });
             }
-        },
 
-        /**
-         * Opens the QuickView modal and manages body classes for state.
-         * @private
-         * @param {Object} optionsModal - Modal configuration object.
-         */
-        _openQuickViewModal: function (optionsModal) {
-            const self = this;
-            this._$modal.modal(optionsModal)
-                .trigger('openModal')
-                .on('modalopened.amadecoQuickView', () => {
-                    $('html').addClass(this.options.selectors.htmlOpenModalClass);
-                    $('body').addClass(this.options.selectors.bodyOpenedClass);
-                })
-                .on('modalclosed.amadecoQuickView', () => {
-                    $('html').removeClass(this.options.selectors.htmlOpenModalClass);
-                    $('body').removeClass(this.options.selectors.bodyOpenedClass);
-                    self._$modal.empty();
-                    const $videoCloseBtn = $(this.options.selectors.videoCloseBtn);
-                    if ($videoCloseBtn.length) {
-                        $videoCloseBtn.remove();
-                    }
-                });
-        },
+            // 2. Ensure Modal is initialized (using the passed dependency)
+            this._ensureModal(modal, buttons);
 
-        /**
-         * Public method to retrieve the widget's options for external access.
-         * @public
-         * @param {string} [key] - Optional specific option key to retrieve.
-         * @returns {Object|string|undefined} All options or value for specific key.
-         */
-        getOptions: function (key) {
-            if (key) {
-                return this.options[key];
+            if (!this._$modal.length) return;
+
+            // Reset modal title to default before loading new content
+            this._$modal.modal('setTitle', this.options.modalTitle);
+
+            // 3. Open Modal
+            this._$modal.modal('openModal');
+            $('html').addClass(this.options.selectors.htmlOpenModalClass);
+            $('body').addClass(this.options.selectors.bodyOpenedClass);
+
+            // 4. Show Loader
+            if (loaderSrc !== null) {
+                this._$modal.html(
+                    '<div class="loading-mask" style="display:block; position:static;">' +
+                    '   <div class="loader">' +
+                    '       <img alt="' + $t('Loading...') + '" src="' + loaderSrc + '">' +
+                    '   </div>' +
+                    '</div>'
+                );
             }
-            return $.extend(true, {}, this.options);
+
+            // 5. Fetch Data
+            $.ajax({
+                url: urlBuilder.build('quickview/index/view'),
+                data: {
+                    id: productId,
+                    form_key: formKey
+                },
+                type: 'POST',
+                dataType: 'html',
+                showLoader: false,
+                context: this
+            }).done(function (html) {
+                // Pass dependencies down the chain
+                this._renderModalContent(html, formKey, ko);
+
+                this._bindProductSpecificEvents();
+            }).fail(function () {
+                this._renderModalContent(
+                    '<div class="message error"><div>' + this.options.texts.errorLoading + '</div></div>',
+                    formKey,
+                    ko
+                );
+            });
         },
 
         /**
-         * Placeholder for configurable product bindings (extendable).
+         * Renders the modal content, triggers binding and form key injection.
+         *
          * @private
-         * @returns {Object} Chainable this
+         * @param {String} html - The HTML content to inject.
+         * @param {String} formKey - The current session form key.
+         * @param {Object} ko - KnockoutJS instance.
+         * @return {void}
          */
-        _bindProductConfigurable: function () {
-            return this;
+        _renderModalContent: function (html, formKey, ko) {
+            var $wrapper,
+                $tempHtml = $('<div>').html(html),
+                $customTitle = $tempHtml.find(this.options.selectors.dynamicModalTitle);
+
+            // Check for custom title element and update modal title if found
+            if ($customTitle.length) {
+                var newTitle = $customTitle.text();
+                if (newTitle) {
+                    this._$modal.modal('setTitle', newTitle);
+                }
+                // Remove the title element from content
+                $customTitle.remove();
+                html = $tempHtml.html();
+            }
+
+            this._disposeModalContent(ko);
+
+            // 1. Wrap content to create a fresh Scope for Knockout
+            $wrapper = $('<div>', {
+                'class': this.options.selectors.contentWrapperClass
+            }).html(html);
+
+            // 2. Inject into DOM
+            this._$modal.html($wrapper);
+            this._$boundElement = $wrapper;
+
+            // 3. Trigger Magento Widget Initialization (swatches, gallery, etc)
+            $wrapper.trigger('contentUpdated');
+
+            // 4. Trigger Knockout Bindings safely on the wrapper
+            try {
+                if ($wrapper.find('[data-bind]').length) {
+                    ko.applyBindings({}, $wrapper[0]);
+                }
+            } catch (e) {
+                console.error('QuickView: KO Binding Error:', e);
+            }
+
+            // 5. Inject Form Key
+            this._bindProductAddToCart(formKey);
         },
 
         /**
-         * Binds bundle product functionality, hiding tab until button click.
+         * Handle modal close event.
+         *
          * @private
-         * @returns {Object} Chainable this
+         * @return {void}
+         */
+        _onModalClose: function () {
+            var $videoCloseBtn;
+
+            $('html').removeClass(this.options.selectors.htmlOpenModalClass);
+            $('body').removeClass(this.options.selectors.bodyOpenedClass);
+
+            // Remove video close button if fotorama left it
+            $videoCloseBtn = $(this.options.selectors.videoCloseBtn);
+            if ($videoCloseBtn.length) {
+                $videoCloseBtn.remove();
+            }
+
+            // Note: We cannot easily access 'ko' here without storing it globally or on the instance.
+            // For now, _disposeModalContent handles the DOM cleanup.
+            // In a strict environment, we would store `this._ko = ko` during the require phase.
+            this._disposeModalContent();
+        },
+
+        /**
+         * Clean up Knockout bindings and remove modal content.
+         *
+         * @private
+         * @param {Object} [koInstance] - Optional KO instance if available.
+         * @return {void}
+         */
+        _disposeModalContent: function (koInstance) {
+            // Attempt to resolve KO from global if not passed (fallback)
+            // or if stored on instance (advanced pattern not implemented here for simplicity)
+            var ko = koInstance || require.s.contexts._.defined['knockout'];
+
+            if (this._$boundElement && this._$boundElement.length && ko) {
+                try {
+                    ko.cleanNode(this._$boundElement[0]);
+                } catch (e) {
+                    // Ignore clean node errors
+                }
+            }
+
+            this._$boundElement = null;
+            if (this._$modal && this._$modal.length) {
+                this._$modal.empty();
+            }
+        },
+
+        /**
+         * Bind events for specific product types (Bundle, Downloadable, Reviews).
+         *
+         * @private
+         * @return {void}
+         */
+        _bindProductSpecificEvents: function () {
+            this._bindProductBundle();
+            this._bindProductDownloadable();
+            this._bindProductReviews();
+        },
+
+        /**
+         * Handle Bundle product specific logic.
+         *
+         * @private
+         * @return {void}
          */
         _bindProductBundle: function () {
-            const $bundleBtn = this._$modal.find(this.options.selectors.bundleButton);
-            const $bundleTabLink = this._$modal.find(this.options.selectors.bundleTabLink);
-            if ($bundleBtn.length) {
+            var $bundleBtn = this._$modal.find(this.options.selectors.bundleButton),
+                $bundleTabLink = this._$modal.find(this.options.selectors.bundleTabLink);
+
+            if ($bundleBtn.length && $bundleTabLink.length) {
                 $bundleTabLink.parent().hide();
-                $bundleBtn.off('click').on('click', (e) => {
-                    e.preventDefault();
-                    $bundleTabLink.parent().show().trigger('click');
+                this._on($bundleBtn, {
+                    'click': function (event) {
+                        event.preventDefault();
+                        $bundleTabLink.parent().show();
+                        $bundleTabLink.trigger('click');
+                    }
                 });
             }
-            return this;
         },
 
         /**
-         * Binds downloadable product functionality, hiding qty if links present.
+         * Handle Downloadable product specific logic.
+         *
          * @private
-         * @returns {Object} Chainable this
+         * @return {void}
          */
         _bindProductDownloadable: function () {
             if (this._$modal.find(this.options.selectors.downloadableLinks).length) {
                 this._$modal.find(this.options.selectors.qtyField).hide();
             }
-            return this;
         },
 
         /**
-         * Binds reviews tab and actions.
+         * Handle Review tab logic inside modal.
+         *
          * @private
-         * @param {string} productHref - Product link href (for extensibility).
-         * @returns {Object} Chainable this
+         * @return {void}
          */
-        _bindProductReviews: function (productHref) {
-            const $reviewsTabLink = this._$modal.find(this.options.selectors.reviewTabSelector);
-            if ($reviewsTabLink.length) {
-                this._$modal.find(this.options.selectors.reviewsActions).click(() => {
-                    $reviewsTabLink.trigger('click');
+        _bindProductReviews: function () {
+            var $reviewsTabLink = this._$modal.find(this.options.selectors.reviewTabSelector),
+                $reviewsActions = this._$modal.find(this.options.selectors.reviewsActions);
+
+            if ($reviewsTabLink.length && $reviewsActions.length) {
+                this._on($reviewsActions, {
+                    'click': function (event) {
+                        var href = String($(event.currentTarget).attr('href') || '');
+
+                        if (href.indexOf('#') !== -1) {
+                            event.preventDefault();
+                        }
+
+                        $reviewsTabLink.trigger('click');
+                    }
                 });
             }
-            return this;
         },
 
         /**
-         * Binds add-to-cart form by injecting form key.
+         * Inject form key into the Add To Cart form.
+         *
          * @private
-         * @returns {Object} Chainable this
+         * @param {String} formKey
+         * @return {void}
          */
-        _bindProductAddToCart: function () {
-            const $addToCartForm = this._$modal.find(this.options.selectors.addToCartForm);
-            if ($addToCartForm.length) {
-                const formKey = $.mage.cookies.get('form_key');
-                const $formKeyInput = $('<input />', {
+        _bindProductAddToCart: function (formKey) {
+            var $form;
+
+            if (!formKey) {
+                return;
+            }
+
+            $form = this._$modal.find(this.options.selectors.addToCartForm);
+
+            if ($form.length && !$form.find('input[name="form_key"]').length) {
+                $('<input/>', {
                     type: 'hidden',
                     name: 'form_key',
                     value: formKey
-                });
-              
-                $addToCartForm.prepend($formKeyInput);
+                }).prependTo($form);
             }
-            return this;
         }
     });
 

@@ -20,21 +20,21 @@
                  * Product media
                  */
                 -->
-	            <referenceContainer name="product.info.media" htmlClass="product media col-12 col-lg-7 col-xxl-8 order-0">
+	            <container name="product.info.media" htmlClass="product media col-12 col-lg-7 col-xxl-8 order-0">
                     <block class="Magento\Catalog\Block\Product\View\Gallery" name="product.info.media.image" template="Magento_Catalog::product/view/gallery.phtml">
                         <arguments>
                             <argument name="gallery_options" xsi:type="object">Magento\Catalog\Block\Product\View\GalleryOptions</argument>
                             <argument name="imageHelper" xsi:type="object">Magento\Catalog\Helper\Image</argument>
                         </arguments>
                     </block>
-                </referenceContainer>
+                </container>
 
                 <!--
                 /**
                  * Main content
                  */
                 -->
-                <referenceContainer name="product.info.main" htmlClass="quickview-main product-info-main col-12 col-lg-5 col-xxl-4 order-1">
+                <container name="product.info.main" htmlClass="quickview-main product-info-main col-12 col-lg-5 col-xxl-4 order-1">
                     <!-- Page title -->
                     <block class="Magento\Theme\Block\Html\Title" name="quickview.title" template="Magento_Theme::html/title.phtml">
                         <arguments>
@@ -161,7 +161,7 @@
                             </block>
                         </block>
                     </block>
-                </referenceContainer>
+                </container>
             </block>
 
             <!--

@@ -20,7 +20,7 @@
                  * Product media
                  */
                 -->
-	            <container name="product.info.media" htmlClass="product media col-12 col-lg-7 col-xxl-8 order-0">
+                <container name="quickview.product.info.media" htmlTag="div" htmlClass="quickview-media product media col-12 col-lg-7 order-0">
                     <block class="Magento\Catalog\Block\Product\View\Gallery" name="product.info.media.image" template="Magento_Catalog::product/view/gallery.phtml">
                         <arguments>
                             <argument name="gallery_options" xsi:type="object">Magento\Catalog\Block\Product\View\GalleryOptions</argument>
@@ -34,7 +34,7 @@
                  * Main content
                  */
                 -->
-                <container name="product.info.main" htmlClass="quickview-main product-info-main col-12 col-lg-5 col-xxl-4 order-1">
+                <container name="quickview.product.info.main" htmlTag="div" htmlClass="quickview-main product-info-main col-12 col-lg-5 order-1">
                     <!-- Page title -->
                     <block class="Magento\Theme\Block\Html\Title" name="quickview.title" template="Magento_Theme::html/title.phtml">
                         <arguments>
@@ -194,11 +194,8 @@
              * Product video
              */
             -->
-            <referenceContainer name="product.info.media">
-                <block class="Magento\ProductVideo\Block\Product\View\Gallery"
-                    name="product.info.media.video"
-                    after="product.info.media.image"
-                    template="Magento_ProductVideo::product/view/gallery.phtml" />
+            <referenceContainer name="quickview.product.info.media">
+                <block class="Magento\ProductVideo\Block\Product\View\Gallery" name="product.info.media.video" after="product.info.media.image" template="Magento_ProductVideo::product/view/gallery.phtml"/>
             </referenceContainer>
 
             <block class="Magento\Framework\Pricing\Render" name="product.price.render.default">
